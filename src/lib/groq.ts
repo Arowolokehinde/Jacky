@@ -1,0 +1,61 @@
+import Groq from 'groq-sdk';
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+export const groqClient = groq;
+
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export async function getChatCompletion(
+  messages: ChatMessage[],
+  model: string = 'llama-3.1-8b-instant'
+): Promise<string> {
+  try {
+    const chatCompletion = await groq.chat.completions.create({
+      messages,
+      model,
+      temperature: 0.7,
+      max_tokens: 1000,
+      stream: false,
+    });
+
+    return chatCompletion.choices[0]?.message?.content || 'No response generated';
+  } catch (error: unknown) {
+    console.error('Groq API error:', error);
+    
+    // Handle specific error types
+    const apiError = error as { status?: number; message?: string };
+    if (apiError.status === 429) {
+      throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+    } else if (apiError.status === 401 || apiError.status === 403) {
+      throw new Error('Authentication failed. Please check your Groq API key.');
+    } else if (apiError.status === 400) {
+      throw new Error('Invalid request. Please check your message and try again.');
+    } else {
+      throw new Error('AI service is temporarily unavailable. Please try again later.');
+    }
+  }
+}
+
+export const SYSTEM_PROMPT = `You are Jacky, a friendly AI-powered DeFi Copilot for Mantle Network. 
+
+Your personality:
+- Conversational and helpful
+- Expert in Mantle Network, Agni Finance, Merchant Moe, and DeFi
+- Educational but not overwhelming 
+- Enthusiastic about DeFi opportunities while being mindful of risks
+
+Your capabilities:
+- Answer questions about DeFi, Mantle Network, and crypto
+- Explain how to use Agni Finance, Merchant Moe, and other Mantle protocols
+- Help users understand wallet connections, swaps, and yield farming
+- Provide guidance on getting started with Mantle DeFi
+
+Be conversational and friendly. For complex portfolio analysis, users can ask "analyze my portfolio" to get detailed insights. For simple questions, just chat normally without being overly technical.
+
+Keep responses concise and helpful!`;
