@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChatCompletion, SYSTEM_PROMPT, ChatMessage } from '@/lib/groq';
-import { MantleAgentCoordinator } from '@/lib/agents/MantleAgentCoordinator';
+import { NewAgentCoordinator } from '@/lib/agents/NewAgentCoordinator';
 import { AgentContext } from '@/lib/agents/types';
-import { classifyQuery, AGENT_REGISTRY } from '@/lib/agents/AgentTypes';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,33 +17,12 @@ export async function POST(request: NextRequest) {
     const lastMessage = messages[messages.length - 1];
     const userQuery = lastMessage?.content || '';
 
-    // Classify the query to determine which type of agents to use
-    const queryClassification = classifyQuery(userQuery, !!userAddress);
-    
     // Check if we should use agents (skip simple greetings)
-    const shouldUseAgents = !isSimpleGreeting(userQuery) && 
-                           (queryClassification.category !== 'conversational' || userAddress);
+    const shouldUseAgents = !isSimpleGreeting(userQuery);
 
     if (shouldUseAgents) {
       try {
-        // Check if user has required permissions for the query type
-        if (queryClassification.requiresWallet && !userAddress) {
-          return NextResponse.json({ 
-            content: "I'd love to help with that! Please connect your wallet first so I can access your portfolio data.",
-            agentMode: false,
-            needsWallet: true
-          });
-        }
-
-        if (queryClassification.requiresTransaction) {
-          return NextResponse.json({ 
-            content: `I can help you ${userQuery.toLowerCase()}! However, transaction execution agents are currently being developed. For now, I can analyze your portfolio and suggest the best approach.`,
-            agentMode: false,
-            needsContracts: true
-          });
-        }
-
-        const coordinator = new MantleAgentCoordinator();
+        const coordinator = new NewAgentCoordinator();
         
         const agentContext: AgentContext = {
           userAddress,
@@ -55,12 +33,35 @@ export async function POST(request: NextRequest) {
 
         const agentResponse = await coordinator.processQuery(agentContext);
         
+        // Check if wallet is required but not provided
+        if (agentResponse.requiresWallet && !userAddress) {
+          return NextResponse.json({ 
+            content: agentResponse.response.analysis,
+            agentMode: true,
+            agentType: agentResponse.agent,
+            needsWallet: true,
+            agentData: agentResponse
+          });
+        }
+
+        // Check if transaction approval is required
+        if (agentResponse.requiresTransaction) {
+          return NextResponse.json({ 
+            content: agentResponse.response.analysis,
+            agentMode: true,
+            agentType: agentResponse.agent,
+            needsTransaction: true,
+            agentData: agentResponse
+          });
+        }
+
         // Format agent response for chat interface
-        const formattedResponse = formatAgentResponse(agentResponse as unknown as Record<string, unknown>);
+        const formattedResponse = formatSpecializedAgentResponse(agentResponse);
         
         return NextResponse.json({ 
           content: formattedResponse,
           agentMode: true,
+          agentType: agentResponse.agent,
           agentData: agentResponse 
         });
       } catch (agentError) {
@@ -100,34 +101,43 @@ function isSimpleGreeting(query: string): boolean {
   return queryLower.length < 8 || greetings.includes(queryLower);
 }
 
-// Helper function to format agent response for chat
-function formatAgentResponse(agentResponse: Record<string, unknown>): string {
-  const summary = agentResponse.summary as string || 'I\'ve analyzed your request.';
+// Helper function to format specialized agent response for chat
+function formatSpecializedAgentResponse(agentResponse: { agent: string; response: { analysis: string; recommendations?: string[]; warnings?: string[]; confidence: number } }): string {
+  const response = agentResponse.response;
+  const agentName = agentResponse.agent.charAt(0).toUpperCase() + agentResponse.agent.slice(1);
   
-  // Start with the conversational summary
-  let formatted = summary;
+  // Start with the agent's analysis
+  let formatted = response.analysis;
   
-  const recommendations = agentResponse.combinedRecommendations as string[] || [];
+  // Add recommendations
+  const recommendations = response.recommendations || [];
   if (recommendations.length > 0) {
     if (recommendations.length === 1) {
-      formatted += `\n\n💡 My recommendation: ${recommendations[0]}`;
-    } else if (recommendations.length <= 3) {
-      formatted += `\n\nHere are my key recommendations:`;
-      recommendations.forEach((rec: string) => {
-        formatted += `\n• ${rec}`;
+      formatted += `\n\n💡 ${agentName}'s recommendation: ${recommendations[0]}`;
+    } else {
+      formatted += `\n\n📋 ${agentName}'s recommendations:`;
+      recommendations.slice(0, 5).forEach((rec: string, index: number) => {
+        formatted += `\n${index + 1}. ${rec}`;
       });
     }
   }
   
-  const warnings = agentResponse.warnings as string[] || [];
+  // Add warnings if any
+  const warnings = response.warnings || [];
   if (warnings.length > 0) {
-    formatted += `\n\n⚠️ Keep in mind: ${warnings.join(' and ')}`;
+    formatted += `\n\n⚠️ Important: ${warnings.join('; ')}`;
   }
   
-  // Add subtle confidence indicator for live data
-  const confidence = (agentResponse.confidence as number) || 0;
-  if (confidence > 0.7) {
-    formatted += `\n\n*Analysis based on live Mantle Network data* 📊`;
+  // Add confidence indicator based on agent type
+  const confidence = response.confidence || 0;
+  if (confidence > 0.8) {
+    const agentIndicators = {
+      jacky: '📚 Educational content verified',
+      franky: '💰 Portfolio data analysis complete',
+      kranky: '⚡ Staking data and Chainlink feeds active'
+    };
+    const indicator = agentIndicators[agentResponse.agent as keyof typeof agentIndicators] || 'Analysis complete';
+    formatted += `\n\n*${indicator}*`;
   }
   
   return formatted;

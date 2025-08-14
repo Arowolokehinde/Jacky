@@ -5,6 +5,7 @@ const groq = new Groq({
 });
 
 export interface ChatMessage {
+  
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
