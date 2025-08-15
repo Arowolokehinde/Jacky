@@ -135,7 +135,7 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
             className={`group/message relative rounded-2xl px-5 py-4 ${
               isUser
                ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg'
-: 'bg-gray-900/80 border border-gray-700/50 text-gray-400 shadow-sm hover:shadow-md transition-shadow'
+: 'bg-gray-900/80 border border-gray-700/50 text-white shadow-sm hover:shadow-md transition-shadow'
             }`}
           >
             {/* Message Text with Enhanced Typography */}
