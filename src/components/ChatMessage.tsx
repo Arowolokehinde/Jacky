@@ -93,8 +93,8 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
           whileHover={{ scale: 1.05, rotate: 5 }}
           className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden ${
             isUser
-              ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg'
-              : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg'
+             ? 'bg-gradient-to-br from-gray-800 to-gray-900 shadow-lg'
+: 'bg-gradient-to-br from-gray-800 to-gray-900 shadow-lg'
           }`}
         >
           {isUser ? (
@@ -134,8 +134,8 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
             whileHover={{ y: -1 }}
             className={`group/message relative rounded-2xl px-5 py-4 ${
               isUser
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                : 'bg-[var(--bg-message-ai)] border border-[var(--border)] text-[var(--text-primary)] shadow-sm hover:shadow-md transition-shadow'
+               ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg'
+: 'bg-gray-900/80 border border-gray-700/50 text-gray-400 shadow-sm hover:shadow-md transition-shadow'
             }`}
           >
             {/* Message Text with Enhanced Typography */}
@@ -161,7 +161,7 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
                     ))}
                   </div>
                   <span className="text-[var(--text-secondary)] text-sm animate-pulse">
-                    Jacky is thinking...
+                  MantleLabs AI is thinking...
                   </span>
                 </div>
               ) : (
