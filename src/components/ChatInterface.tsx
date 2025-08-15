@@ -34,7 +34,7 @@ export function ChatInterface() {
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-4">
-                Welcome to Jacky AI
+                Welcome to MantleLabs AI
               </h2>
               <p className="text-[var(--text-secondary)] mb-8 max-w-md">
                 {isConnected ? (
