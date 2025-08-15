@@ -1,18 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { Sidebar } from '@/components/Sidebar';
+import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { Menu } from 'lucide-react';
 import { useAccount } from 'wagmi';
 
 export default function Home() {
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { address, isConnected } = useAccount();
+
+  // Check if user has completed onboarding
+  useEffect(() => {
+    const hasCompletedOnboarding = localStorage.getItem('mantlelabs-onboarding-completed');
+    if (!hasCompletedOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('mantlelabs-onboarding-completed', 'true');
+    setShowOnboarding(false);
+  };
 
   const truncateAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
+
+  // Show onboarding screen if user hasn't completed it
+  if (showOnboarding) {
+    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="h-screen w-full bg-[var(--bg-primary)] flex overflow-hidden">
@@ -37,7 +57,7 @@ export default function Home() {
             <Menu className="w-6 h-6 text-[var(--text-primary)]" />
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-[var(--text-primary)] font-bold tracking-wider">JACKY</span>
+            <span className="text-[var(--text-primary)] font-bold tracking-wider">MantleLabs AI</span>
           </div>
           {/* Mobile Account ID */}
           <div className="bg-[var(--bg-pill-dark)] px-2 py-1 rounded-full">
