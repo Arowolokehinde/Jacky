@@ -22,7 +22,7 @@ export function ChatInterface() {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-chat)]">
+    <div className="flex flex-col h-full bg-[var(--bg-sidebar)]">
       {/* Header with Wallet Connection */}
       <div className="hidden lg:flex items-center justify-end p-4 border-b border-[var(--border)]">
         <WalletConnection />

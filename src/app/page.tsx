@@ -15,14 +15,21 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-full bg-[var(--bg-primary)] flex">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+    <div className="h-screen w-full bg-[var(--bg-primary)] flex overflow-hidden">
+      {/* Sidebar - Now truly static */}
+      <div className="hidden lg:block w-64 flex-shrink-0">
+        <Sidebar isOpen={true} onToggle={() => {}} />
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <div className="lg:hidden">
+        <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+      </div>
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-[var(--border)] bg-[var(--bg-primary)]">
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-[var(--border)] bg-[var(--bg-primary)] flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-[var(--bg-pill-dark)] rounded-lg transition-colors"
@@ -47,8 +54,8 @@ export default function Home() {
           </div>
         </div>
         
-        {/* Chat Interface */}
-        <div className="flex-1">
+        {/* Chat Interface - Now scrollable independently */}
+        <div className="flex-1 overflow-hidden">
           <ChatInterface />
         </div>
       </div>
