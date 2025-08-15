@@ -1,15 +1,10 @@
-# 🤖 Jacky AI DeFi Copilot
+#  Mantle Labs AI DeFi Copilot
 
 **Your intelligent guide to decentralized finance on Mantle Network**
 
-[![Next.js 15](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-blue?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
-[![Wagmi](https://img.shields.io/badge/Wagmi-2.x-green?style=flat-square)](https://wagmi.sh/)
+##  Overview
 
-## 🎯 Overview
-
-Jacky AI DeFi Copilot is an intelligent conversational interface for decentralized finance operations, specifically optimized for the **Mantle Network**. It features a sophisticated multi-agent system that can analyze portfolios, assess risks, suggest strategies, and potentially execute DeFi transactions through natural language interactions.
+MantleLabs AI DeFi Copilot is an intelligent conversational interface for decentralized finance operations, specifically optimized for the **Mantle Network**. It features a sophisticated multi-agent system that can analyze portfolios, assess risks, suggest strategies, and potentially execute DeFi transactions through natural language interactions.
 
 ### ✨ Key Features
 
@@ -218,7 +213,7 @@ src/
 GROQ_API_KEY=your_groq_api_key_here
 
 # Optional
-NEXT_PUBLIC_APP_NAME=Jacky AI DeFi Copilot
+NEXT_PUBLIC_APP_NAME=Mantle Labs AI DeFi Copilot
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 ```
 
@@ -298,14 +293,6 @@ The system automatically routes queries based on keywords and context:
 ## 📝 License
 
 This project is private and proprietary. All rights reserved.
-
-## 🔗 Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Wagmi Documentation](https://wagmi.sh/)
-- [Mantle Network Documentation](https://docs.mantle.xyz/)
-- [Groq API Documentation](https://console.groq.com/docs)
-
 ---
 
 **Built with ❤️ for the Mantle DeFi ecosystem**

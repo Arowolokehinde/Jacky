@@ -1,14 +1,13 @@
-// NEW AGENT COORDINATOR - Jacky/Franky/Kranky System
+// NEW AGENT COORDINATOR - Jacky/Franky System
 // Routes queries to the appropriate specialized agent
-// Replaces the old MantleAgentCoordinator
+// Simplified two-agent system
 
 import { JackyAgent } from './JackyAgent';
 import { FrankyAgent } from './FrankyAgent';
-import { KrankyAgent } from './KrankyAgent';
 import { AgentResponse, AgentContext } from './types';
 
 export interface SpecializedResponse {
-  agent: 'jacky' | 'franky' | 'kranky';
+  agent: 'jacky' | 'franky';
   response: AgentResponse;
   confidence: number;
   requiresWallet: boolean;
@@ -18,12 +17,10 @@ export interface SpecializedResponse {
 export class NewAgentCoordinator {
   private jacky: JackyAgent;
   private franky: FrankyAgent;
-  private kranky: KrankyAgent;
 
   constructor() {
     this.jacky = new JackyAgent();
     this.franky = new FrankyAgent();
-    this.kranky = new KrankyAgent();
   }
 
   async processQuery(context: AgentContext): Promise<SpecializedResponse> {
@@ -45,9 +42,6 @@ export class NewAgentCoordinator {
         case 'franky':
           response = await this.franky.analyze(context);
           break;
-        case 'kranky':
-          response = await this.kranky.analyze(context);
-          break;
         default:
           throw new Error('Invalid agent selection');
       }
@@ -66,7 +60,7 @@ export class NewAgentCoordinator {
   }
 
   private selectAgent(query: string, _hasWallet: boolean): {
-    agent: 'jacky' | 'franky' | 'kranky';
+    agent: 'jacky' | 'franky';
     requiresWallet: boolean;
     requiresTransaction: boolean;
     confidence: number;
@@ -78,15 +72,11 @@ export class NewAgentCoordinator {
       'swap', 'trade', 'exchange', 'buy', 'sell',
       'send', 'transfer', 'move',
       'balance', 'portfolio', 'holdings',
-      'transaction', 'history', 'analyze my'
-    ];
-
-    // KRANKY - Staking & Chainlink (Wallet Required for personal data)
-    const krankyKeywords = [
+      'transaction', 'history', 'analyze my',
+      // Added staking keywords to Franky since Kranky is removed
       'stake', 'unstake', 'staking', 'rewards',
       'chainlink', 'price feed', 'data feed',
-      'optimize', 'yield', 'apy', 'apr',
-      'validator', 'liquid staking'
+      'optimize', 'yield', 'apy', 'apr'
     ];
 
     // JACKY - Educational (No Wallet Required)
@@ -105,34 +95,18 @@ export class NewAgentCoordinator {
 
     // Calculate match scores
     const frankyScore = this.calculateMatchScore(queryLower, frankyKeywords);
-    const krankyScore = this.calculateMatchScore(queryLower, krankyKeywords);
     const jackyScore = this.calculateMatchScore(queryLower, jackyKeywords);
     const hasTransactionIntent = transactionKeywords.some(keyword => 
       queryLower.includes(keyword)
     );
 
-    // Agent selection logic
-    if (frankyScore > krankyScore && frankyScore > jackyScore) {
+    // Agent selection logic - simplified to just Jacky vs Franky
+    if (frankyScore > jackyScore) {
       return {
         agent: 'franky',
         requiresWallet: true,
         requiresTransaction: hasTransactionIntent,
         confidence: Math.min(frankyScore + 0.1, 1.0)
-      };
-    }
-
-    if (krankyScore > jackyScore) {
-      // Kranky handles both educational staking info and personal staking data
-      const needsPersonalData = queryLower.includes('my') || 
-                              queryLower.includes('stake ') || 
-                              queryLower.includes('unstake') ||
-                              queryLower.includes('rewards');
-      
-      return {
-        agent: 'kranky',
-        requiresWallet: needsPersonalData,
-        requiresTransaction: hasTransactionIntent && needsPersonalData,
-        confidence: Math.min(krankyScore + 0.1, 1.0)
       };
     }
 
@@ -166,11 +140,10 @@ export class NewAgentCoordinator {
     return Math.min(score, 1.0);
   }
 
-  private generateWalletRequiredResponse(agent: 'jacky' | 'franky' | 'kranky'): SpecializedResponse {
+  private generateWalletRequiredResponse(agent: 'jacky' | 'franky'): SpecializedResponse {
     const agentDescriptions = {
       jacky: 'Jacky doesn\'t need wallet access - try asking about Mantle Network or DeFi concepts!',
-      franky: 'Franky needs wallet access to help with swaps, transfers, and portfolio analysis.',
-      kranky: 'Kranky needs wallet access to help with your personal staking positions and optimization.'
+      franky: 'Franky needs wallet access to help with swaps, transfers, portfolio analysis, and staking.'
     };
 
     const recommendations = {
@@ -183,13 +156,8 @@ export class NewAgentCoordinator {
         'Connect wallet to check balances',
         'I can help with MNT ↔ USDC swaps',
         'Transfer tokens securely',
-        'Analyze your transaction history'
-      ],
-      kranky: [
-        'Connect wallet to see staking positions',
-        'I can optimize your MNT staking strategy',
-        'Get real-time Chainlink price data',
-        'Compare staking protocols and APYs'
+        'Analyze your transaction history',
+        'Optimize your MNT staking strategy'
       ]
     };
 
@@ -212,7 +180,7 @@ export class NewAgentCoordinator {
     };
   }
 
-  private getAgentCapabilities(agent: 'jacky' | 'franky' | 'kranky'): string[] {
+  private getAgentCapabilities(agent: 'jacky' | 'franky'): string[] {
     const capabilities = {
       jacky: [
         'Mantle Network education',
@@ -225,14 +193,9 @@ export class NewAgentCoordinator {
         'Token swaps (MNT ↔ USDC, etc.)',
         'Token transfers',
         'Transaction analysis',
-        'Requires wallet connection'
-      ],
-      kranky: [
         'MNT staking optimization',
         'Chainlink price feed integration',
-        'Yield comparison across protocols',
-        'Staking rewards tracking',
-        'Requires wallet for personal data'
+        'Requires wallet connection'
       ]
     };
 
@@ -248,8 +211,7 @@ export class NewAgentCoordinator {
         analysis: 'I\'m having trouble processing your request right now.',
         recommendations: [
           'Try asking Jacky about Mantle Network',
-          'Connect wallet to use Franky for swaps/transfers',
-          'Ask Kranky about MNT staking options'
+          'Connect wallet to use Franky for swaps/transfers/staking'
         ],
         warnings: ['Service temporarily unavailable'],
         data: {}
@@ -271,22 +233,16 @@ export class NewAgentCoordinator {
       },
       franky: {
         name: 'Franky - Portfolio Manager',
-        description: 'Wallet-connected portfolio manager for swaps and transfers',
+        description: 'Wallet-connected portfolio manager for swaps, transfers, and staking',
         requiresWallet: true,
         capabilities: this.getAgentCapabilities('franky')
-      },
-      kranky: {
-        name: 'Kranky - Staking Expert',
-        description: 'Specialized in MNT staking and Chainlink data',
-        requiresWallet: true,
-        capabilities: this.getAgentCapabilities('kranky')
       }
     };
   }
 
   // Method to manually route to specific agent (for frontend tabs)
   public async routeToAgent(
-    agent: 'jacky' | 'franky' | 'kranky',
+    agent: 'jacky' | 'franky',
     context: AgentContext
   ): Promise<SpecializedResponse> {
     try {
@@ -301,10 +257,6 @@ export class NewAgentCoordinator {
             return this.generateWalletRequiredResponse('franky');
           }
           response = await this.franky.analyze(context);
-          break;
-        case 'kranky':
-          // Kranky can work without wallet for general staking info
-          response = await this.kranky.analyze(context);
           break;
       }
 
