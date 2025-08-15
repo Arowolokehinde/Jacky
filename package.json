@@ -1,0 +1,69 @@
+{
+  "name": "jacky-ai-defi",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network mantleSepolia",
+    "deploy:testnet:cjs": "hardhat --config hardhat.config.cjs run scripts/deploy.cjs --network mantleSepolia",
+    "compile:cjs": "hardhat --config hardhat.config.cjs compile",
+    "verify:deployment": "hardhat run scripts/verify-deployment.js --network mantleSepolia",
+    "verify:contracts": "hardhat run scripts/verify-contracts.js --network mantleSepolia",
+    "verify:contracts:cjs": "hardhat --config hardhat.config.cjs run scripts/verify-contracts.cjs --network mantleSepolia"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.8.0",
+    "@openzeppelin/contracts": "^4.9.3",
+    "@radix-ui/react-icons": "^1.3.2",
+    "@rainbow-me/rainbowkit": "^2.2.8",
+    "@tanstack/react-query": "^5.85.0",
+    "@types/uuid": "^10.0.0",
+    "ethers": "^6.15.0",
+    "framer-motion": "^12.23.12",
+    "groq-sdk": "^0.30.0",
+    "lucide-react": "^0.539.0",
+    "next": "15.4.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "uuid": "^11.1.0",
+    "viem": "^2.33.3",
+    "wagmi": "^2.16.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.10",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "chai": "^5.2.1",
+    "dotenv": "^17.2.1",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.6",
+    "hardhat": "^2.26.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "description": "**Your intelligent guide to decentralized finance on Mantle Network**",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://55555@github.com/Arowolokehinde/Jacky.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Arowolokehinde/Jacky/issues"
+  },
+  "homepage": "https://github.com/Arowolokehinde/Jacky#readme"
+}
