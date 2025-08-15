@@ -114,7 +114,7 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
   const isInputActive = message.trim() || isFocused;
 
   return (
-    <div className="border-t border-[var(--border)] bg-[var(--bg-chat)] relative">
+    <div className="border-t border-[var(--border)] bg-[var(--bg-sidebar)] relative">
       {/* Quick Suggestions */}
       <AnimatePresence>
         {showSuggestions && (

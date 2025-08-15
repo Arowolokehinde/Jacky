@@ -66,7 +66,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             {/* EAP Feedback Form Button */}
             <button className="w-full px-4 py-3 bg-[var(--accent-green)] hover:bg-[var(--accent-green-hover)] 
                                text-white font-medium rounded-full transition-colors duration-200">
-              EAP Feedback Form
+               Feedback Form
             </button>
           </div>
 
