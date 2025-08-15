@@ -37,9 +37,9 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          {/* Header - JACKY Logo */}
+          {/* Header - MantleLabs AI Logo */}
           <div className="p-4 border-b border-[var(--border)]">
-            <h1 className="text-[var(--text-primary)] font-bold text-xl tracking-wider">JACKY</h1>
+            <h1 className="text-[var(--text-primary)] font-bold text-xl tracking-wider">MantleLabs AI</h1>
           </div>
 
           {/* Action Buttons */}

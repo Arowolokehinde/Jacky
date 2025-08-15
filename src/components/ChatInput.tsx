@@ -1,18 +1,16 @@
-'use client';
+"use client";
 
-import { useState, KeyboardEvent, useRef, useEffect } from 'react';
-import { 
-  Send, 
-  Loader2, 
-  Paperclip, 
-  Mic, 
+import { useState, KeyboardEvent, useRef, useEffect } from "react";
+import {
+  Send,
+  Paperclip,
+  Mic,
   MicOff,
-  Smile,
   Zap,
   Sparkles,
-  StopCircle
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+  StopCircle,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -20,8 +18,12 @@ interface ChatInputProps {
   onStopGeneration?: () => void;
 }
 
-export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatInputProps) {
-  const [message, setMessage] = useState('');
+export function ChatInput({
+  onSendMessage,
+  isLoading,
+  onStopGeneration,
+}: ChatInputProps) {
+  const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [charCount, setCharCount] = useState(0);
@@ -36,36 +38,56 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
   }, []);
 
   const suggestions = [
-    { icon: '🔍', text: 'Analyze my portfolio performance', category: 'Analysis' },
-    { icon: '💰', text: 'Find best yield farming opportunities', category: 'DeFi' },
-    { icon: '⚡', text: 'Optimize my gas fees', category: 'Gas' },
-    { icon: '🛡️', text: 'Security audit for this contract', category: 'Security' },
-    { icon: '📊', text: 'Compare DEX prices for token swap', category: 'Trading' },
-    { icon: '🌊', text: 'Show me liquidity pool opportunities', category: 'Liquidity' }
+    {
+      icon: "🔍",
+      text: "Analyze my portfolio performance",
+      category: "Analysis",
+    },
+    {
+      icon: "💰",
+      text: "Find best yield farming opportunities",
+      category: "DeFi",
+    },
+    { icon: "⚡", text: "Optimize my gas fees", category: "Gas" },
+    {
+      icon: "🛡️",
+      text: "Security audit for this contract",
+      category: "Security",
+    },
+    {
+      icon: "📊",
+      text: "Compare DEX prices for token swap",
+      category: "Trading",
+    },
+    {
+      icon: "🌊",
+      text: "Show me liquidity pool opportunities",
+      category: "Liquidity",
+    },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
       onSendMessage(message);
-      setMessage('');
+      setMessage("");
       setCharCount(0);
       setShowSuggestions(false);
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
-    
-    if (e.key === 'Escape') {
+
+    if (e.key === "Escape") {
       setShowSuggestions(false);
     }
 
     // Handle Tab for suggestions
-    if (e.key === 'Tab' && message.length === 0) {
+    if (e.key === "Tab" && message.length === 0) {
       e.preventDefault();
       setShowSuggestions(true);
     }
@@ -105,8 +127,11 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current && mounted) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(
+        textareaRef.current.scrollHeight,
+        120
+      )}px`;
     }
   }, [message, mounted]);
 
@@ -114,7 +139,7 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
   const isInputActive = message.trim() || isFocused;
 
   return (
-    <div className="border-t border-[var(--border)] bg-[var(--bg-sidebar)] relative">
+    <div className="border-t  bg-[var(--bg-sidebar)] relative">
       {/* Quick Suggestions */}
       <AnimatePresence>
         {showSuggestions && (
@@ -153,14 +178,20 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
                              border border-[var(--border)] hover:border-[var(--accent-primary)]/30
                              group focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50"
                 >
-                  <span className="text-lg" role="img" aria-label={suggestion.category}>
+                  <span
+                    className="text-lg"
+                    role="img"
+                    aria-label={suggestion.category}
+                  >
                     {suggestion.icon}
                   </span>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">
                       {suggestion.text}
                     </p>
-                    <p className="text-xs text-[var(--text-tertiary)]">{suggestion.category}</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      {suggestion.category}
+                    </p>
                   </div>
                 </motion.button>
               ))}
@@ -171,8 +202,8 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
 
       {/* Click overlay to close suggestions */}
       {showSuggestions && (
-        <div 
-          className="fixed inset-0 z-40" 
+        <div
+          className="fixed inset-0 z-40"
           onClick={() => setShowSuggestions(false)}
           aria-hidden="true"
         />
@@ -183,11 +214,13 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
         <div className="flex items-end gap-3">
           {/* Enhanced Input Container */}
           <div className="flex-1 relative">
-            <div className={`relative bg-[var(--bg-pill-dark)] border-2 rounded-2xl transition-all duration-200 ${
-              isInputActive
-                ? 'border-[var(--accent-primary)] shadow-lg shadow-[var(--accent-primary)]/10' 
-                : 'border-[var(--border)] hover:border-[var(--border-focus)]'
-            }`}>
+            <div
+              className={`relative bg-[var(--bg-pill-dark)] border-2 rounded-2xl transition-all duration-200 ${
+                isInputActive
+                  ? "border-black-500 shadow-lg shadow-[var(--accent-primary)]/10"
+                  : "border-[var(--border)] hover:border-white"
+              }`}
+            >
               {/* Textarea */}
               <textarea
                 ref={textareaRef}
@@ -196,7 +229,7 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
                 onKeyDown={handleKeyDown}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                placeholder="Ask Jacky about DeFi strategies, portfolio analysis, or anything crypto..."
+                placeholder="Ask MantleLabs AI about DeFi strategies, portfolio analysis, or anything crypto..."
                 className="w-full min-h-[52px] max-h-[120px] p-4 pr-32 bg-transparent text-[var(--text-primary)] 
                            placeholder-[var(--text-secondary)] resize-none outline-none text-sm
                            scrollbar-thin scrollbar-thumb-[var(--border)] scrollbar-track-transparent"
@@ -229,11 +262,11 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
                   onClick={toggleRecording}
                   className={`p-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                     isRecording
-                      ? 'bg-red-500 text-white shadow-lg focus:ring-red-500/50'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] focus:ring-[var(--accent-primary)]/50'
+                      ? "bg-red-500 text-white shadow-lg focus:ring-red-500/50"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] focus:ring-[var(--accent-primary)]/50"
                   }`}
-                  title={isRecording ? 'Stop recording' : 'Voice input'}
-                  aria-label={isRecording ? 'Stop recording' : 'Voice input'}
+                  title={isRecording ? "Stop recording" : "Voice input"}
+                  aria-label={isRecording ? "Stop recording" : "Voice input"}
                 >
                   {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
                 </motion.button>
@@ -246,8 +279,8 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
                   onClick={() => setShowSuggestions(!showSuggestions)}
                   className={`p-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                     showSuggestions
-                      ? 'bg-[var(--accent-primary)] text-white focus:ring-[var(--accent-primary)]/50'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] focus:ring-[var(--accent-primary)]/50'
+                      ? "bg-gradient-to-r from-gray-800 to-gray-900 text-white focus:ring-gray-700/50"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800/50 focus:ring-gray-700/50"
                   }`}
                   title="Quick suggestions"
                   aria-label="Show quick suggestions"
@@ -265,18 +298,19 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
             whileTap={{ scale: 0.95 }}
             type={isLoading ? "button" : "submit"}
             onClick={isLoading ? onStopGeneration : undefined}
-            disabled={(!message.trim() && !isLoading)}
+            disabled={!message.trim() && !isLoading}
             className={`flex items-center justify-center w-15 h-15 rounded-xl font-semibold
                        transition-all duration-200 shadow-lg disabled:cursor-not-allowed
                        focus:outline-none focus:ring-2 focus:ring-offset-2 flex-shrink-0
-                       ${isLoading 
-                         ? 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-500/50' 
-                         : message.trim()
-                           ? 'bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-violet-500/25 focus:ring-violet-500/50'
-                           : 'bg-[var(--bg-pill-dark)] text-[var(--text-tertiary)] cursor-not-allowed focus:ring-transparent'
+                       ${
+                         isLoading
+                           ? "bg-red-500 hover:bg-red-600 text-white focus:ring-red-500/50"
+                           : message.trim()
+                           ? "bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 text-white shadow-gray-800/25 focus:ring-gray-700/50"
+                           : "bg-gray-900/80 text-gray-400 cursor-not-allowed focus:ring-transparent"
                        }`}
-            title={isLoading ? 'Stop generation' : 'Send message'}
-            aria-label={isLoading ? 'Stop generation' : 'Send message'}
+            title={isLoading ? "Stop generation" : "Send message"}
+            aria-label={isLoading ? "Stop generation" : "Send message"}
           >
             <AnimatePresence mode="wait">
               {isLoading ? (
@@ -311,13 +345,15 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
               <span>Press Tab for suggestions • Shift+Enter for new line</span>
             )}
           </div>
-          <div className={`text-xs transition-colors ${
-            charCount > maxChars * 0.9 
-              ? 'text-red-400' 
-              : charCount > maxChars * 0.7 
-                ? 'text-orange-400' 
-                : 'text-[var(--text-tertiary)]'
-          }`}>
+          <div
+            className={`text-xs transition-colors ${
+              charCount > maxChars * 0.9
+                ? "text-red-400"
+                : charCount > maxChars * 0.7
+                ? "text-orange-400"
+                : "text-[var(--text-tertiary)]"
+            }`}
+          >
             {charCount}/{maxChars}
           </div>
         </div>
@@ -338,28 +374,35 @@ export function ChatInput({ onSendMessage, isLoading, onStopGeneration }: ChatIn
                       key={i}
                       animate={{
                         scale: [1, 1.2, 1],
-                        opacity: [0.5, 1, 0.5]
+                        opacity: [0.5, 1, 0.5],
                       }}
                       transition={{
                         duration: 1,
                         repeat: Infinity,
                         delay: i * 0.2,
-                        ease: "easeInOut"
+                        ease: "easeInOut",
                       }}
                       className="w-2 h-2 bg-[var(--accent-primary)] rounded-full"
                     />
                   ))}
                 </div>
                 <span className="text-xs text-[var(--text-secondary)] font-medium">
-                  Jacky is thinking...
+                MantleLabs AI is thinking...
                 </span>
                 <div className="w-4 h-4 relative">
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                     className="w-4 h-4"
                   >
-                    <Sparkles size={16} className="text-[var(--accent-primary)]" />
+                    <Sparkles
+                      size={16}
+                      className="text-[var(--accent-primary)]"
+                    />
                   </motion.div>
                 </div>
               </div>
