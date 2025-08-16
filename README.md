@@ -15,6 +15,15 @@ MantleLabs AI DeFi Copilot is an intelligent conversational interface for decent
 - **⚡ Smart Query Routing**: Automatically routes queries to appropriate specialized agents
 - **🎨 Beautiful UI/UX**: Modern chat interface with smooth animations and responsive design
 
+
+## Deployed Contract addresses
+- MNTTransferExecutor.sol - https://sepolia.mantlescan.xyz/address/0x59a10e9f83641e83f9761a5cc4a7307016d3f8c0#code
+- ActionHub.sol - https://sepolia.mantlescan.xyz/address/0x593c0cba6a0e377d7bcb118aeeb691955db82078#code
+- DEXAggregator.sol - https://sepolia.mantlescan.xyz/address/0x51649792320c676b2e38accfb7cd61ab0d2a3f5a#code
+- ChainlinkAnalyzer.sol - https://sepolia.mantlescan.xyz/address/0x720aafc7b13469af6666af5187f7a52f19936d35#code
+- YieldFarmer.sol - https://sepolia.mantlescan.xyz/address/0x658988d01a0ee07de0c5ac96213857351eaf13e9#code
+
+
 ## 🏗️ Architecture
 
 ### Multi-Agent System
