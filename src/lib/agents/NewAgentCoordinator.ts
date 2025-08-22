@@ -1,6 +1,8 @@
+
+
 // NEW AGENT COORDINATOR - Jacky/Franky System
 // Routes queries to the appropriate specialized agent
-// Simplified two-agent system
+// Simplified two-agent system with enhanced context and response optimization
 
 import { JackyAgent } from './JackyAgent';
 import { FrankyAgent } from './FrankyAgent';
@@ -33,23 +35,29 @@ export class NewAgentCoordinator {
         return this.generateWalletRequiredResponse(agentSelection.agent);
       }
 
-      // Route to appropriate agent
+      // Enhanced context with real-time data (pass agent type to avoid unnecessary API calls)
+      const enhancedContext = await this.enhanceContext(context, agentSelection.agent);
+
+      // Route to appropriate agent with enhanced context
       let response: AgentResponse;
       switch (agentSelection.agent) {
         case 'jacky':
-          response = await this.jacky.analyze(context);
+          response = await this.jacky.analyze(enhancedContext);
           break;
         case 'franky':
-          response = await this.franky.analyze(context);
+          response = await this.franky.analyze(enhancedContext);
           break;
         default:
           throw new Error('Invalid agent selection');
       }
 
+      // Post-process and optimize response
+      const optimizedResponse = await this.optimizeResponse(response, agentSelection.agent, enhancedContext);
+
       return {
         agent: agentSelection.agent,
-        response,
-        confidence: response.confidence,
+        response: optimizedResponse,
+        confidence: optimizedResponse.confidence,
         requiresWallet: agentSelection.requiresWallet,
         requiresTransaction: agentSelection.requiresTransaction
       };
@@ -76,7 +84,10 @@ export class NewAgentCoordinator {
       // Added staking keywords to Franky since Kranky is removed
       'stake', 'unstake', 'staking', 'rewards',
       'chainlink', 'price feed', 'data feed',
-      'optimize', 'yield', 'apy', 'apr'
+      'optimize', 'yield', 'apy', 'apr',
+      'find best', 'best yield', 'opportunities', 'maximize', 'find yield',
+      // Risk analysis keywords - portfolio-related
+      'risk', 'risks', 'what are my', 'my risks'
     ];
 
     // JACKY - Educational (No Wallet Required)
@@ -153,11 +164,11 @@ export class NewAgentCoordinator {
         'Get resources and tutorials'
       ],
       franky: [
-        'Connect wallet to check balances',
+        'Connect wallet to execute transactions',
         'I can help with MNT ↔ USDC swaps',
-        'Transfer tokens securely',
-        'Analyze your transaction history',
-        'Optimize your MNT staking strategy'
+        'Execute secure token transfers',
+        'Stake ETH for mETH rewards',
+        'Get real-time transaction previews'
       ]
     };
 
@@ -189,12 +200,11 @@ export class NewAgentCoordinator {
         'No wallet required'
       ],
       franky: [
-        'Portfolio balance tracking',
-        'Token swaps (MNT ↔ USDC, etc.)',
-        'Token transfers',
-        'Transaction analysis',
-        'MNT staking optimization',
-        'Chainlink price feed integration',
+        'Execute token swaps (MNT ↔ USDC, etc.)',
+        'Execute token transfers', 
+        'Execute ETH staking for mETH',
+        'Transaction previews with risk assessment',
+        'Real-time price integration',
         'Requires wallet connection'
       ]
     };
@@ -222,54 +232,73 @@ export class NewAgentCoordinator {
     };
   }
 
-  // Public method to get agent information
-  public getAgentInfo(): { [key: string]: Record<string, unknown> } {
-    return {
-      jacky: {
-        name: 'Jacky - Mantle Expert',
-        description: 'Educational AI specialized in Mantle Network knowledge',
-        requiresWallet: false,
-        capabilities: this.getAgentCapabilities('jacky')
-      },
-      franky: {
-        name: 'Franky - Portfolio Manager',
-        description: 'Wallet-connected portfolio manager for swaps, transfers, and staking',
-        requiresWallet: true,
-        capabilities: this.getAgentCapabilities('franky')
-      }
-    };
-  }
 
-  // Method to manually route to specific agent (for frontend tabs)
-  public async routeToAgent(
-    agent: 'jacky' | 'franky',
-    context: AgentContext
-  ): Promise<SpecializedResponse> {
+
+  // Enhanced context enrichment with real-time blockchain data
+  private async enhanceContext(context: AgentContext, agentType?: 'jacky' | 'franky'): Promise<AgentContext> {
+    const enhanced = { ...context };
+
     try {
-      let response: AgentResponse;
-      
-      switch (agent) {
-        case 'jacky':
-          response = await this.jacky.analyze(context);
-          break;
-        case 'franky':
-          if (!context.userAddress) {
-            return this.generateWalletRequiredResponse('franky');
-          }
-          response = await this.franky.analyze(context);
-          break;
+      // No market data needed - removed per user request
+
+      // For wallet-connected Franky queries, just add basic wallet info
+      if (context.userAddress && agentType === 'franky') {
+        enhanced.walletInfo = {
+          address: context.userAddress,
+          connected: true,
+          network: 'Mantle'
+        };
       }
 
-      return {
-        agent,
-        response,
-        confidence: response.confidence,
-        requiresWallet: agent !== 'jacky',
-        requiresTransaction: false
-      };
+      // No network status needed - simplified
+      
     } catch (error) {
-      console.error(`Error routing to ${agent}:`, error);
-      return this.generateFallbackResponse();
+      console.warn('Context enhancement failed, using basic context:', error);
     }
+
+    return enhanced;
   }
+
+  // Response optimization based on agent type and context
+  private async optimizeResponse(
+    response: AgentResponse, 
+    agentType: 'jacky' | 'franky',
+    context: AgentContext
+  ): Promise<AgentResponse> {
+    const optimized = { ...response };
+
+    try {
+      // Add wallet context to recommendations
+      if (agentType === 'franky' && context.walletInfo) {
+        optimized.recommendations = this.enhanceRecommendations(
+          response.recommendations,
+          context.walletInfo
+        );
+      }
+
+    } catch (error) {
+      console.warn('Response optimization failed, using original response:', error);
+    }
+
+    return optimized;
+  }
+
+
+
+  // Enhance recommendations with wallet context only
+  private enhanceRecommendations(
+    originalRecs: string[],
+    walletInfo: Record<string, unknown>
+  ): string[] {
+    const enhanced = [...originalRecs];
+    
+    // Add wallet-based recommendations
+    if (walletInfo && walletInfo.connected) {
+      enhanced.push('💰 Wallet connected - you can execute transactions directly');
+    }
+
+    return enhanced;
+  }
+
+
 }

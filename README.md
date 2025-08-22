@@ -304,4 +304,23 @@ The system automatically routes queries based on keywords and context:
 This project is private and proprietary. All rights reserved.
 ---
 
+📄 Deployed
+✅ SimpleAMM deployed at: 0x63a42FB6eED4e555d6bA8A625b0638CD97f03489
+
+📊 Initial Pool Reserves:
+1 MNT → 0.647404 TUSDC
+1 MNT → 0.00019920139620798 TWETH
+
+🎯 MVP AMM Deployment Complete:
+═══════════════════════════════════════
+SimpleAMM:        0x63a42FB6eED4e555d6bA8A625b0638CD97f03489
+TestUSDC (TUSDC): 0x8Dae0Abd9e5E86612953E723A388105C8BBe5Dc9
+TestWETH (TWETH): 
+
+Native MNT:       0x0000000000000000000000000000000000000000
+═══════════════════════════════════════
+
+TestUSDC  - https://sepolia.mantlescan.xyz/address/0x8Dae0Abd9e5E86612953E723A388105C8BBe5Dc9#code
+ TestWETH - https://sepolia.mantlescan.xyz/address/0x5616773169F46e4e917F8261f415D9E2E7D3562a#code
+ mantlestaking-  0x1b1a2581886F1c2b715858cffF8679Eed90A7028 
 **Built with ❤️ for the Mantle DeFi ecosystem**

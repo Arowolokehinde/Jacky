@@ -15,7 +15,25 @@ import {
   Zap
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { mantle } from 'wagmi/chains';
+// Import the custom mantleSepolia from our config instead of mainnet mantle
+const mantleSepolia = {
+  id: 5003,
+  name: 'Mantle Sepolia',
+  network: 'mantle-sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Sepolia Mantle',
+    symbol: 'MNT',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.sepolia.mantle.xyz'] },
+    public: { http: ['https://rpc.sepolia.mantle.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'Mantle Sepolia Explorer', url: 'https://explorer.sepolia.mantle.xyz' },
+  },
+  testnet: true,
+} as const;
 import { formatEther } from 'viem';
 
 // Enhanced Wallet icons with better styling
@@ -85,10 +103,10 @@ export function WalletConnection() {
   // Get MNT balance on other chains
   const { data: mantleBalance, refetch: refetchMantle } = useBalance({
     address,
-    token: chainId === mantle.id ? undefined : '0x3c3a81e81dc49A522A592e7622A7E711c06bf354',
+    token: chainId === mantleSepolia.id ? undefined : '0x3c3a81e81dc49A522A592e7622A7E711c06bf354',
   });
 
-  const isOnMantle = chainId === mantle.id;
+  const isOnMantle = chainId === mantleSepolia.id;
 
   useEffect(() => {
     if (copied) {
@@ -103,7 +121,7 @@ export function WalletConnection() {
   };
 
   const handleSwitchToMantle = () => {
-    switchChain({ chainId: mantle.id });
+    switchChain({ chainId: mantleSepolia.id });
   };
 
   const copyAddress = async () => {
@@ -306,7 +324,7 @@ export function WalletConnection() {
                     {connector ? getWalletDisplayName(connector.name) : 'Connected'}
                   </h3>
                   <p className="text-[var(--text-secondary)] text-xs">
-                    {isOnMantle ? 'Mantle Network' : 'Ethereum Network'}
+                    {isOnMantle ? 'Mantle Sepolia' : 'Ethereum Network'}
                   </p>
                 </div>
               </div>
@@ -374,7 +392,7 @@ export function WalletConnection() {
                 </div>
                 <div className="flex-1">
                   <p className="text-orange-700 dark:text-orange-300 text-sm font-medium">
-                    Switch to Mantle
+                    Switch to Mantle Sepolia
                   </p>
                   <p className="text-orange-600 dark:text-orange-400 text-xs mt-0.5">
                     For optimal experience and lower fees

@@ -40,7 +40,11 @@ export interface Strategy {
 
 export interface AgentContext {
   userAddress?: string;
-  portfolioData?: PortfolioData;
+  portfolioData?: PortfolioData; // Keep for backwards compatibility, but unused
   userQuery: string;
   chatHistory: Array<{ role: string; content: string }>;
+  // Enhanced context fields for Phase 3 optimization
+  marketData?: Record<string, unknown>;
+  walletInfo?: Record<string, unknown>; // Simple wallet info instead of complex portfolio
+  networkStatus?: Record<string, unknown>;
 }

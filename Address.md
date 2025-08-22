@@ -1,4 +1,5 @@
 
+
 1. Deploying SimpleActionHub...
 SimpleActionHub deployed to: 0xe9eC4BcB98f9240f6CfE37693A19b310F9A71E95
 
@@ -34,5 +35,4 @@ SimpleChainlinkAnalyzer: 0x2b3AbFD1D90694e8eFeB0840e4ff1ce2bCf429d2
  Fund MNTTransferExecutor with MNT for transfers
 ⚠ Add private key to .env.local file for testnet deployment
 
-=== Deployment Complete ===
-mac@macs-MacBook-Pro-2 jacky-ai-defi % 
+AMM V2 - 0xac705b5873f4b40b765C1eeCf4cab43A13A0F1D7

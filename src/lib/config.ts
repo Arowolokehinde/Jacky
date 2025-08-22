@@ -2,8 +2,28 @@ import { http, createConfig } from 'wagmi'
 import { mainnet, sepolia, mantle, mantleTestnet } from 'wagmi/chains'
 import { coinbaseWallet, injected } from 'wagmi/connectors'
 
+// Custom Mantle Sepolia chain (not in wagmi/chains)
+const mantleSepolia = {
+  id: 5003,
+  name: 'Mantle Sepolia',
+  network: 'mantle-sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Sepolia Mantle',
+    symbol: 'MNT',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.sepolia.mantle.xyz'] },
+    public: { http: ['https://rpc.sepolia.mantle.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'Mantle Sepolia Explorer', url: 'https://explorer.sepolia.mantle.xyz' },
+  },
+  testnet: true,
+} as const
+
 export const config = createConfig({
-  chains: [mainnet, sepolia, mantle, mantleTestnet],
+  chains: [mainnet, sepolia, mantle, mantleTestnet, mantleSepolia],
   connectors: [
     injected(),
     coinbaseWallet(),
@@ -23,6 +43,7 @@ export const config = createConfig({
     [sepolia.id]: http(),
     [mantle.id]: http('https://rpc.mantle.xyz'),
     [mantleTestnet.id]: http('https://rpc.testnet.mantle.xyz'),
+    [mantleSepolia.id]: http('https://rpc.sepolia.mantle.xyz'),
   },
 })
 

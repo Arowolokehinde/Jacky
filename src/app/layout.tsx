@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { Web3Provider } from "@/contexts/WagmiProvider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -12,8 +12,6 @@ export const metadata: Metadata = {
     "Yield Farming", "Liquidity Mining", "Smart Contracts", "Web3"
   ],
   authors: [{ name: "Jacky AI Team" }],
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
-  themeColor: "#6366f1",
   openGraph: {
     title: "Jacky AI - Your DeFi Copilot",
     description: "Advanced AI-powered guide for decentralized finance",
@@ -43,6 +41,13 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#6366f1"
 };
 
 export default function RootLayout({

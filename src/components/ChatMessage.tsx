@@ -16,8 +16,19 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSendTransaction, useReadContract } from 'wagmi';
-import { parseEther } from 'viem';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSendTransaction, useReadContract, useChainId, useSwitchChain } from 'wagmi';
+import { parseEther, parseUnits } from 'viem';
+import type { TransactionPreview } from '@/lib/agents/FrankyAgent';
+import { useChainlinkPrice } from '@/hooks/useChainlinkPrice';
+
+interface ContractActionWithPreview {
+  type: string;
+  contractAddress: string;
+  functionName: string;
+  parameters: Record<string, unknown>;
+  estimatedGas: string;
+  preview?: TransactionPreview;
+}
 
 interface ChatMessageProps {
   message: Message;
@@ -31,13 +42,18 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [manualSuccess, setManualSuccess] = useState(false);
   const [showHash, setShowHash] = useState(false);
-  const [showYieldData, setShowYieldData] = useState(false);
+  const [showPriceData, setShowPriceData] = useState(false);
   const messageRef = useRef<HTMLDivElement>(null);
   
   // Smart contract interaction hooks
   const { isConnected } = useAccount();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   const { sendTransaction, data: txHash, isPending: isSendPending, error: sendError } = useSendTransaction();
+  
+  // Network detection and switching
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const MANTLE_SEPOLIA_ID = 5003;
   
   const { isLoading: isConfirming, isSuccess, isError: txError, error: txErrorDetails } = useWaitForTransactionReceipt({
     hash: hash || txHash,
@@ -72,35 +88,33 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
   const agentData = message.agentData as Record<string, unknown>;
   const response = agentData?.response as Record<string, unknown>;
   const data = response?.data as Record<string, unknown>;
-  const contractAction = data?.contractAction as Record<string, unknown>;
+  const contractAction = data?.contractAction as ContractActionWithPreview;
   const requiresTransaction = data?.requiresTransaction as boolean;
-
-  // For yield analysis, read contract data instead of executing transaction
-  const isYieldAnalysis = contractAction?.type === 'yield_analysis';
-  const { data: yieldPrice, isLoading: isLoadingYield, error: yieldError } = useReadContract({
-    address: isYieldAnalysis && showYieldData ? (contractAction.contractAddress as `0x${string}`) : undefined,
-    abi: isYieldAnalysis ? [{
-      name: 'getTokenPrice',
-      type: 'function',
-      stateMutability: 'view',
-      inputs: [{ name: 'token', type: 'address' }],
-      outputs: [{ name: 'price', type: 'uint256' }],
-    }] : [],
-    functionName: 'getTokenPrice',
-    args: isYieldAnalysis ? ['0x35578E7e8949B5a59d40704dCF6D6faEC2Fb1D17' as `0x${string}`] : undefined, // MNT token address
-  });
+  
+  // For price feeds, show simple Chainlink price data
+  const isPriceFeeds = contractAction?.type === 'price_feeds';
+  
+  // Get all supported Chainlink price feeds
+  const { price: mntPrice, loading: mntLoading, error: mntError } = useChainlinkPrice('MNT');
+  const { price: ethPrice, loading: ethLoading, error: ethError } = useChainlinkPrice('ETH');
+  const { price: usdcPrice, loading: usdcLoading, error: usdcError } = useChainlinkPrice('USDC');
+  const { price: btcPrice, loading: btcLoading, error: btcError } = useChainlinkPrice('BTC');
+  const { price: linkPrice, loading: linkLoading, error: linkError } = useChainlinkPrice('LINK');
+  const { price: usdtPrice, loading: usdtLoading, error: usdtError } = useChainlinkPrice('USDT');
+  
+  const allPricesLoading = mntLoading || ethLoading || usdcLoading || btcLoading || linkLoading || usdtLoading;
+  const hasPriceErrors = mntError || ethError || usdcError || btcError || linkError || usdtError;
 
   // Debug logging
   useEffect(() => {
-    if (showYieldData && isYieldAnalysis) {
-      console.log('Yield analysis debug:', {
+    if (showPriceData && isPriceFeeds) {
+      console.log('Price feeds debug:', {
         contractAddress: contractAction.contractAddress,
-        isLoadingYield,
-        yieldPrice,
-        yieldError: yieldError?.message
+        showingPriceData: true,
+        prices: { mntPrice, ethPrice, usdcPrice, btcPrice, linkPrice, usdtPrice }
       });
     }
-  }, [showYieldData, isLoadingYield, yieldPrice, yieldError, isYieldAnalysis, contractAction]);
+  }, [showPriceData, isPriceFeeds, contractAction, mntPrice, ethPrice, usdcPrice, btcPrice, linkPrice, usdtPrice]);
 
   // Typing animation for AI messages
   useEffect(() => {
@@ -126,9 +140,9 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
     if (!contractAction || !isConnected) return;
 
     try {
-      // Handle yield analysis as data fetch, not transaction
-      if (contractAction.type === 'yield_analysis') {
-        setShowYieldData(true);
+      // Handle price feeds as data display, not transaction
+      if (contractAction.type === 'price_feeds') {
+        setShowPriceData(true);
         return;
       }
       
@@ -143,27 +157,97 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
           value: amount,
         });
       } else if (contractAction.type === 'token_swap') {
+        const tokenIn = (contractAction.parameters as Record<string, unknown>).tokenIn as `0x${string}`;
+        const tokenOut = (contractAction.parameters as Record<string, unknown>).tokenOut as `0x${string}`;
+        const amountIn = (contractAction.parameters as Record<string, unknown>).amountIn as string;
+        const isNativeSwap = tokenIn === '0x0000000000000000000000000000000000000000';
+        
+        // Token addresses with their decimals
+        const TUSDC_ADDRESS = '0x8Dae0Abd9e5E86612953E723A388105C8BBe5Dc9';
+        const TWETH_ADDRESS = '0x5616773169F46e4e917F8261f415D9E2E7D3562a';
+        
+        // Parse amount with correct decimals for input token
+        let parsedAmountIn: bigint;
+        if (tokenIn === TUSDC_ADDRESS) {
+          parsedAmountIn = parseUnits(amountIn, 6); // TUSDC has 6 decimals
+        } else if (tokenIn === TWETH_ADDRESS) {
+          parsedAmountIn = parseEther(amountIn); // TWETH has 18 decimals
+        } else {
+          parsedAmountIn = parseEther(amountIn); // MNT has 18 decimals
+        }
+        
         writeContract({
           address: (contractAction.contractAddress as string) as `0x${string}`,
           abi: [
             {
-              name: 'executeBestSwap',
+              name: 'swap',
               type: 'function',
               stateMutability: 'payable',
               inputs: [
-                { name: 'fromToken', type: 'string' },
-                { name: 'toToken', type: 'string' },
-                { name: 'amount', type: 'uint256' },
+                { name: 'tokenIn', type: 'address' },
+                { name: 'tokenOut', type: 'address' },
+                { name: 'amountIn', type: 'uint256' },
+                { name: 'amountOutMin', type: 'uint256' },
               ],
+              outputs: [{ name: 'amountOut', type: 'uint256' }],
+            },
+          ],
+          functionName: 'swap',
+          args: [
+            tokenIn,
+            tokenOut,
+            parsedAmountIn, // Now uses correct decimals!
+            BigInt(0), // amountOutMin = 0 for demo (no slippage protection)
+          ],
+          value: isNativeSwap ? parsedAmountIn : undefined, // Send MNT if swapping from MNT
+        });
+      } else if (contractAction.type === 'mnt_staking') {
+        const amount = (contractAction.parameters as Record<string, unknown>).amount as string;
+        
+        writeContract({
+          address: (contractAction.contractAddress as string) as `0x${string}`,
+          abi: [
+            {
+              name: 'stakeMNT',
+              type: 'function',
+              stateMutability: 'payable',
+              inputs: [],
               outputs: [],
             },
           ],
-          functionName: 'executeBestSwap',
-          args: [
-            (contractAction.parameters as Record<string, unknown>).fromToken as string,
-            (contractAction.parameters as Record<string, unknown>).toToken as string,
-            parseEther((contractAction.parameters as Record<string, unknown>).amount as string),
+          functionName: 'stakeMNT',
+          args: [],
+          value: parseEther(amount), // Send MNT to stake
+        });
+      } else if (contractAction.type === 'mnt_claim_rewards') {
+        writeContract({
+          address: (contractAction.contractAddress as string) as `0x${string}`,
+          abi: [
+            {
+              name: 'claimRewards',
+              type: 'function',
+              stateMutability: 'nonpayable',
+              inputs: [],
+              outputs: [],
+            },
           ],
+          functionName: 'claimRewards',
+          args: [],
+        });
+      } else if (contractAction.type === 'mnt_unstake') {
+        writeContract({
+          address: (contractAction.contractAddress as string) as `0x${string}`,
+          abi: [
+            {
+              name: 'unstakeAll',
+              type: 'function',
+              stateMutability: 'nonpayable',
+              inputs: [],
+              outputs: [],
+            },
+          ],
+          functionName: 'unstakeAll',
+          args: [],
         });
       }
     } catch (error) {
@@ -345,6 +429,127 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
             )}
           </motion.div>
 
+          {/* Transaction Preview */}
+          {!isUser && requiresTransaction && contractAction && contractAction.preview && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    🔮
+                  </div>
+                  <span className="font-semibold text-blue-400">Transaction Preview</span>
+                </div>
+                
+                {/* Safety Score Badge */}
+                <div className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
+                  contractAction.preview.safetyLevel === 'high' 
+                    ? 'bg-green-900/30 text-green-400 border border-green-500/30'
+                  : contractAction.preview.safetyLevel === 'medium'
+                    ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-500/30'
+                  : contractAction.preview.safetyLevel === 'low'
+                    ? 'bg-orange-900/30 text-orange-400 border border-orange-500/30'
+                    : 'bg-red-900/30 text-red-400 border border-red-500/30'
+                }`}>
+                  <span>{contractAction.preview.safetyScore}/100</span>
+                  <span className="opacity-75">
+                    {contractAction.preview.safetyLevel === 'high' ? '🟢' 
+                    : contractAction.preview.safetyLevel === 'medium' ? '🟡'
+                    : contractAction.preview.safetyLevel === 'low' ? '🟠' : '🔴'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-gray-400">Description:</span>
+                    <div className="text-white">{contractAction.preview.description}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Time:</span>
+                    <div className="text-white">{contractAction.preview.timeEstimate}</div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-gray-400">Before:</span>
+                    <div className="text-white">{contractAction.preview.beforeBalance}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">After:</span>
+                    <div className="text-white">{contractAction.preview.afterBalance}</div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-gray-400">Net Change:</span>
+                    <div className="text-white font-semibold">{contractAction.preview.netChange}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Gas Cost:</span>
+                    <div className="text-white">{contractAction.preview.gasCost}</div>
+                  </div>
+                </div>
+                
+                {/* Enhanced Safety Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-gray-400">Success Rate:</span>
+                    <div className="text-white font-semibold">{contractAction.preview.successProbability}%</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Contract:</span>
+                    <div className="text-white flex items-center gap-1">
+                      {contractAction.preview.contractVerified ? '✅ Verified' : '❌ Unverified'}
+                    </div>
+                  </div>
+                </div>
+                
+                {contractAction.preview.risks.length > 0 && (
+                  <div>
+                    <span className="text-gray-400">⚠️ Risks:</span>
+                    <ul className="text-yellow-400 text-xs mt-1">
+                      {contractAction.preview.risks.map((risk: string, index: number) => (
+                        <li key={index}>• {risk}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Enhanced Safety Warnings */}
+                {contractAction.preview.warnings.length > 0 && (
+                  <div className={`p-2 rounded border ${
+                    contractAction.preview.safetyLevel === 'danger' 
+                      ? 'bg-red-900/20 border-red-500/50 text-red-300'
+                    : contractAction.preview.safetyLevel === 'low'
+                      ? 'bg-orange-900/20 border-orange-500/50 text-orange-300'
+                    : 'bg-yellow-900/20 border-yellow-500/50 text-yellow-300'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>
+                        {contractAction.preview.safetyLevel === 'danger' ? '🚨' : '⚠️'}
+                      </span>
+                      <span className="font-medium text-xs">
+                        {contractAction.preview.safetyLevel === 'danger' ? 'DANGER' : 'WARNINGS'}
+                      </span>
+                    </div>
+                    <ul className="text-xs space-y-1">
+                      {contractAction.preview.warnings.map((warning: string, index: number) => (
+                        <li key={index}>• {warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Smart Contract Transaction Button */}
           {!isUser && requiresTransaction && contractAction && isConnected && (
             <motion.div
@@ -413,10 +618,10 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
                   </>
                 ) : (
                   <>
-                    {isYieldAnalysis ? (
+                    {isPriceFeeds ? (
                       <>
                         <div className="w-4 h-4">📊</div>
-                        Get Yield Data
+                        Get Price Data
                       </>
                     ) : (
                       <>
@@ -450,39 +655,142 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
                 </div>
               )}
 
-              {/* Yield Data Display */}
-              {isYieldAnalysis && showYieldData && (
+              {/* Price Feeds Display */}
+              {isPriceFeeds && showPriceData && (
                 <div className="mt-2 p-3 bg-blue-900/10 border border-blue-500/20 rounded text-blue-400 text-sm">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     <div>📊</div>
-                    <strong>Mantle Yield Analysis</strong>
+                    <strong>Chainlink Price Feeds</strong>
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   </div>
-                  {isLoadingYield ? (
+                  
+                  {allPricesLoading ? (
                     <div className="flex items-center gap-2">
                       <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                         className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
                       />
-                      Loading Chainlink data...
-                    </div>
-                  ) : yieldError ? (
-                    <div className="text-red-400 space-y-1">
-                      <div>❌ Contract call failed</div>
-                      <div className="text-xs opacity-75">Error: {yieldError.message}</div>
-                      <div className="text-xs opacity-75">Contract: {contractAction.contractAddress as string}</div>
-                    </div>
-                  ) : yieldPrice ? (
-                    <div className="space-y-1">
-                      <div>💰 **MNT Price**: ${(Number(yieldPrice) / 100000000).toFixed(4)}</div>
-                      <div>📈 **Data Source**: Chainlink Oracle</div>
-                      <div>⏰ **Updated**: {new Date().toLocaleTimeString()}</div>
-                      <div className="text-xs mt-2 opacity-75">
-                        Real-time price from deployed ChainlinkAnalyzer contract
-                      </div>
+                      Loading price feeds...
                     </div>
                   ) : (
-                    <div className="text-red-400">No data received</div>
+                    <div className="space-y-3">
+                      {/* Price Feed Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* MNT/USD */}
+                        <div className="bg-gray-800/50 p-3 rounded border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <div className="font-semibold">💎 MNT/USD</div>
+                            <div className="text-right">
+                              {mntError ? (
+                                <div className="text-red-400 text-xs">Error</div>
+                              ) : mntPrice ? (
+                                <div className="text-white font-bold">${mntPrice.toFixed(4)}</div>
+                              ) : (
+                                <div className="text-gray-400 text-xs">N/A</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">Mantle Token</div>
+                        </div>
+                        
+                        {/* ETH/USD */}
+                        <div className="bg-gray-800/50 p-3 rounded border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <div className="font-semibold">🔷 ETH/USD</div>
+                            <div className="text-right">
+                              {ethError ? (
+                                <div className="text-red-400 text-xs">Error</div>
+                              ) : ethPrice ? (
+                                <div className="text-white font-bold">${ethPrice.toFixed(2)}</div>
+                              ) : (
+                                <div className="text-gray-400 text-xs">N/A</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">Ethereum</div>
+                        </div>
+                        
+                        {/* BTC/USD */}
+                        <div className="bg-gray-800/50 p-3 rounded border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <div className="font-semibold">₿ BTC/USD</div>
+                            <div className="text-right">
+                              {btcError ? (
+                                <div className="text-red-400 text-xs">Error</div>
+                              ) : btcPrice ? (
+                                <div className="text-white font-bold">${btcPrice.toFixed(0)}</div>
+                              ) : (
+                                <div className="text-gray-400 text-xs">N/A</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">Bitcoin</div>
+                        </div>
+                        
+                        {/* USDC/USD */}
+                        <div className="bg-gray-800/50 p-3 rounded border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <div className="font-semibold">💵 USDC/USD</div>
+                            <div className="text-right">
+                              {usdcError ? (
+                                <div className="text-red-400 text-xs">Error</div>
+                              ) : usdcPrice ? (
+                                <div className="text-white font-bold">${usdcPrice.toFixed(4)}</div>
+                              ) : (
+                                <div className="text-gray-400 text-xs">N/A</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">USD Coin</div>
+                        </div>
+                        
+                        {/* LINK/USD */}
+                        <div className="bg-gray-800/50 p-3 rounded border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <div className="font-semibold">🔗 LINK/USD</div>
+                            <div className="text-right">
+                              {linkError ? (
+                                <div className="text-red-400 text-xs">Error</div>
+                              ) : linkPrice ? (
+                                <div className="text-white font-bold">${linkPrice.toFixed(4)}</div>
+                              ) : (
+                                <div className="text-gray-400 text-xs">N/A</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">Chainlink</div>
+                        </div>
+                        
+                        {/* USDT/USD */}
+                        <div className="bg-gray-800/50 p-3 rounded border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <div className="font-semibold">💴 USDT/USD</div>
+                            <div className="text-right">
+                              {usdtError ? (
+                                <div className="text-red-400 text-xs">Error</div>
+                              ) : usdtPrice ? (
+                                <div className="text-white font-bold">${usdtPrice.toFixed(4)}</div>
+                              ) : (
+                                <div className="text-gray-400 text-xs">N/A</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">Tether USD</div>
+                        </div>
+                      </div>
+                      
+                      {/* Data Source Info */}
+                      <div className="text-xs opacity-75 bg-gray-800/30 p-2 rounded">
+                        📡 **Data Source**: Chainlink Price Feeds on Mantle Sepolia Testnet • Updated: {new Date().toLocaleTimeString()}
+                      </div>
+                      
+                      {hasPriceErrors && (
+                        <div className="text-xs bg-yellow-900/20 border border-yellow-500/20 p-2 rounded text-yellow-400">
+                          ⚠️ Some price feeds may be unavailable on testnet
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -501,6 +809,24 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
                     <div>Method: Direct native transfer</div>
                     <div>Recipient: {(contractAction.parameters as Record<string, unknown>).recipient as string}</div>
                     <div>Amount: {(contractAction.parameters as Record<string, unknown>).amount as string} MNT</div>
+                  </>
+                ) : contractAction.type === 'mnt_staking' ? (
+                  <>
+                    <div>Method: Mantle Native Staking</div>
+                    <div>Amount: {(contractAction.parameters as Record<string, unknown>).amount as string} MNT</div>
+                    <div>APY: 5% (500 basis points)</div>
+                  </>
+                ) : contractAction.type === 'mnt_claim_rewards' ? (
+                  <>
+                    <div>Method: Claim Staking Rewards</div>
+                    <div>Action: Harvest accumulated rewards</div>
+                    <div>Note: Staked MNT remains locked</div>
+                  </>
+                ) : contractAction.type === 'mnt_unstake' ? (
+                  <>
+                    <div>Method: Complete Unstaking</div>
+                    <div>Action: Withdraw all staked MNT + rewards</div>
+                    <div>Note: Exits entire staking position</div>
                   </>
                 ) : (
                   <>
